@@ -137,3 +137,22 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Editors ---
+.vscode/
+.idea/
+
+# --- Node / Web (future-proofing) ---
+node_modules/
+.env
+npm-debug.log*
+
+# --- KiCad ---
+*.bak
+*.kicad_prl
+*.kicad_pro
+_autosave-*
