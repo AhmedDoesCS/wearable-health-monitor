@@ -2,10 +2,12 @@
 
 ## 2026-01-12
 Goal:
-- Extract relevant information from datasheets.
+- Learn I2C protocols using Arduino basics.
+- Extract relevant data from datasheets 
 
 What I did:
-- Initialized 
+- Initialized platformio project.
+- 
 
 What failed:
 -
@@ -14,4 +16,4 @@ What I learned:
 -
 
 Next step:
-- Add averaging filter
+- 
