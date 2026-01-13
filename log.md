@@ -7,7 +7,7 @@ Goal:
 
 What I did:
 - Initialized platformio project.
-- 
+- Successfully ran I2C communication between LCD and Arduino Mega
 
 What failed:
 -
