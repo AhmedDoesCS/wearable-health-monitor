@@ -1,0 +1,5 @@
+- One ESP32
+- One I2C bus
+- MAX30102 via header
+- SSD1306 I2C OLED via header
+- External 3.3V power
