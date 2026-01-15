@@ -29,7 +29,26 @@ What I did:
 - Began work on schematic for revision A PCB.
 
 What I learned:
-- 
+- KiCad:
+    - Placing socket connections
+    - Using net labels
 
 Next step:
-- 
+- Finalize Rev A v1 schematic design.
+
+## 2026-01-14
+Goal:
+- Finish Rev A v1 schematic design.
+
+What I did:
+- Made progress on Rev A v1 schematic
+
+What I learned:
+- KiCad:
+    - Using No Connection "X" marks
+    - Decoupling capacitor positioning
+    - Using test points in circuit boards
+    - Using Electrical Rule Checker
+
+Next step:
+- Design v1 PCB of Rev A 
