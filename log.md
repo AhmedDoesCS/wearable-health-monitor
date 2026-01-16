@@ -52,3 +52,22 @@ What I learned:
 
 Next step:
 - Design v1 PCB of Rev A 
+
+## 2026-01-15
+Goal:
+- Start Rev A v1 PCB design.
+
+What I did:
+- Assigned footprints to schematic symbols.
+- Completed Rev A v1 PCB design.
+
+What I learned:
+- KiCad:
+    - How to assign footprints to schematic symbols
+    - Working with Edge.Cuts layer
+    - Modifying corners using fillet
+    - Adding custom widths for traces
+    - Routing components
+
+Next step:
+- Modify Rev A and read datasheets for all sensors.
