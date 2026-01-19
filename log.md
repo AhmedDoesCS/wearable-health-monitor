@@ -72,7 +72,7 @@ What I learned:
 Next step:
 - Modify Rev A and read datasheets for all sensors.
 
-## 2026-01-15
+## 2026-01-19
 Goal:
 - Start Rev B design
 
