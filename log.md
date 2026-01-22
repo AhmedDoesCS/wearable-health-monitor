@@ -72,12 +72,12 @@ What I learned:
 Next step:
 - Modify Rev A and read datasheets for all sensors.
 
-## 2026-01-19
+## 2026-01-21
 Goal:
-- Start Rev B design
+- Test and learn to use new components
 
 What I did:
-- Made notes on MAX30205 datasheet
+- Tested and made notes on the SSD1306.
 
 What I learned:
 - 
