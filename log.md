@@ -74,13 +74,17 @@ Next step:
 
 ## 2026-01-21
 Goal:
-- Test and learn to use new components
+- Test and learn to use new components.
 
 What I did:
 - Tested and made notes on the SSD1306.
+- Properly set up PlatformIO.
+- Set up test circuit on breadboard to run ESP32 and SSD1306 OLED display.
 
 What I learned:
-- 
+- How to initialize platformIO projects.
+- How to program SSD1306 using Adafruit Graphics libraries.
+- How to program ESP32 using Arduino framework.
 
 Next step:
-- 
+- Solder MAX30102 and learn how to display information on OLED screen.
