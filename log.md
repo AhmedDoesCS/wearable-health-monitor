@@ -98,6 +98,7 @@ What I did:
 - Soldered headers to MPU6050.
 - Connected both peripherals to ESP32 I2C bus.
 - Wrote code utilizing both devices together.
+- Initialized software project folder to start database app development.
 
 What I learned:
 - Controlling multiple peripherals through one I2C bus.
