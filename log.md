@@ -106,3 +106,4 @@ What I learned:
 
 Next step:
 - Test MPU6050 sensor and connect it to the current system.
+- Develop a voltage divider to convert 9V source to 3.3V.
