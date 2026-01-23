@@ -22,7 +22,7 @@ void setup() {
   display.setTextColor(WHITE);
 
   display.setCursor(0, 0);
-  display.println("HOLY SHIT LOIS IT WORKS!!!!");
+  display.println("I probably should have switched this text before pushing to my main repo");
   display.display();
 }
 

@@ -88,3 +88,20 @@ What I learned:
 
 Next step:
 - Solder MAX30102 and learn how to display information on OLED screen.
+
+## 2026-01-22
+Goal:
+- Represent MAX30102 data on OLED
+
+What I did:
+- Soldered headers to MAX30102.
+- Soldered headers to MPU6050.
+- Connected both peripherals to ESP32 I2C bus.
+- Wrote code utilizing both devices together.
+
+What I learned:
+- Controlling multiple peripherals through one I2C bus.
+- Connecting peripherals in parallel to one master.
+
+Next step:
+- Test MPU6050 sensor and connect it to the current system.
