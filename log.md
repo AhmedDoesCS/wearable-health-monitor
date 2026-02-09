@@ -107,3 +107,20 @@ What I learned:
 Next step:
 - Test MPU6050 sensor and connect it to the current system.
 - Develop a voltage divider to convert 9V source to 3.3V.
+
+
+## 2026-02-08
+Goal:
+- Initialize activity software architecture.
+
+What I did:
+- Initialized frontend and backend systems for activity monitor.
+
+What I learned:
+- Server design and application
+- Using mysql2 to retrieve and store data through relational databases
+- Requesting and sending commands through HTTP requests.
+
+Next step:
+- Continue software architecture.
+- Progress in Rev B PCB
