@@ -127,3 +127,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .table-data {
+    
+  }
+}
