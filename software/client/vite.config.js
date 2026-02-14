@@ -9,6 +9,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      "/activity": "http://localhost:3001"
+    }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
