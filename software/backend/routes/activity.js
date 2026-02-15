@@ -3,11 +3,11 @@ import { db } from "../db.js"
 
 const router = express.Router();
 
-router.get("/activity", async (req, res) => {
+router.get("/", async (req, res) => {
     try {
 
         const [rows] = await db.execute(
-            "SELECT activity_time, heart_rate, temperature, calories_burned", ["ACTIVITY"]
+            "SELECT activity_time, heart_rate, temperature, calories_burned FROM activity;", ["ACTIVITY"]
         );
 
         if (rows.length === 0) {

@@ -1,8 +1,21 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useState } from 'react';
 import data from './tableTest.json'
 import { Button } from './components/ui/button'
 
 function App() {
+
+  const [activities, setActivities] = useState([]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  const fetchActivities = async () => {
+    const response = await fetch("/activity");
+    setActivities(await response.json());
+  };
+
   return <>
     <div className='w-full h-[100vh] p-7'>
 
@@ -33,7 +46,7 @@ function App() {
           <tbody className='divide-y-2 w-full'>
             {
               data.map((content, i) => (
-                <tr className='py-3 px-4 w-full flex justify-between'>
+                <tr key={i} className='py-3 px-4 w-full flex justify-between'>
                   <td className='table-data'>
                     {
                       content["time"]
@@ -59,24 +72,14 @@ function App() {
             }
           </tbody>
         </table>
-
-
-        <div className=''>
-
-        </div>
-
-        {/* Table data */}
-        <div className='divide-y-2'>
-
-        </div>
       </div>
 
-      
-      <p>
-        {
-          
-        }
-      </p>
+
+      {
+        activities.map((data) => {
+          <p>{data.temperature}</p>
+        })
+      }
     </div>
   </>
 }

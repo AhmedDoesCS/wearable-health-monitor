@@ -11,7 +11,12 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      "/activity": "http://localhost:3001"
+      "/activity": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+      }
+       
     }
   },
   resolve: {

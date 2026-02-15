@@ -124,3 +124,17 @@ What I learned:
 Next step:
 - Continue software architecture.
 - Progress in Rev B PCB
+
+## 2026-02-14
+Goal:
+- Connect database to client through server
+
+What I did:
+- Define route for fetching activities data from database.
+
+What I learned:
+- Setting up proxies in vite to avoid CORS.
+- Using .map to map out lists of data in JSX.
+
+Next step:
+- Progess in REV B PCB.
