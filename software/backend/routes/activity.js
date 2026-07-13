@@ -5,7 +5,6 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-
         const [rows] = await db.execute(
             "SELECT activity_time, heart_rate, temperature, calories_burned FROM activity;", ["ACTIVITY"]
         );

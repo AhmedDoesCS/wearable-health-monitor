@@ -1,102 +1,143 @@
+/**************************************************************************
+ This is an example for our Monochrome OLEDs based on SSD1306 drivers
+
+ Pick one up today in the adafruit shop!
+ ------> http://www.adafruit.com/category/63_98
+
+ This example is for a 128x64 pixel display using I2C to communicate
+ 3 pins are required to interface (two I2C and one reset).
+
+ Adafruit invests time and resources providing this open
+ source code, please support Adafruit and open-source
+ hardware by purchasing products from Adafruit!
+
+ Written by Limor Fried/Ladyada for Adafruit Industries,
+ with contributions from the open source community.
+ BSD license, check license.txt for more information
+ All text above, and the splash screen below must be
+ included in any redistribution.
+ **************************************************************************/
+#include <Arduino.h>
+#include "MAX30105.h"
+#include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <SparkFun_TMP117.h>  // Used to send and recieve specific information from our sensor
+#include <MPU6050_light.h>
 
-#include "MAX30105.h"   // SparkFun MAX3010x library
-#include "heartRate.h"  // SparkFun heart rate algorithm helper (optional)
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// The pins for I2C are defined by the Wire-library.
+// On an arduino UNO:       A4(SDA), A5(SCL)
+// On an arduino MEGA 2560: 20(SDA), 21(SCL)
+// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
+#define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+MPU6050 mpu(Wire);
+
+#define NUMFLAKES 10  // Number of snowflakes in the animation example
+
+#define LOGO_HEIGHT 16
+#define LOGO_WIDTH 16
+
 MAX30105 particleSensor;
+#define debug Serial
 
-uint32_t lastDisplayMs = 0;
-const uint32_t displayPeriodMs = 200; // 5 Hz display refresh
-
-const byte RATE_SIZE = 4;  //Increase this for more averaging. 4 is good.
-byte rates[RATE_SIZE];     //Array of heart rates
-byte rateSpot = 0;
-long lastBeat = 0;  //Time at which the last beat occurred
-
-float beatsPerMinute;  //Current BPM value
-int beatAvg;           //Average BPM value
+TMP117 sensor;  // Initalize sensor
 
 void setup() {
-  Serial.begin(115200);
-  Wire.begin();  // ESP32 can use Wire.begin(SDA, SCL);
+  Serial.begin(9600);
+  Wire.begin();
+  Wire.setClock(400000);  // Used for the TMP117
+  // Wait for display
+  delay(500);
 
-  // ---- OLED init ----
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // try 0x3D if needed
-    Serial.println("SSD1306 allocation failed");
-    while (1) {}
+  byte status = mpu.begin();
+  while (status != 0) {}
+  mpu.calcOffsets();
+
+  Serial.println("TMP117 Example 1: Basic Readings");
+  if (sensor.begin() == true)  // Function to check if the sensor will correctly self-identify with the proper Device ID/Address
+  {
+    Serial.println("Begin");
+  } else {
+    Serial.println("Device failed to setup- Freezing code.");
+    while (1)
+      ;  // Runs forever
   }
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;)
+      ;  // Don't proceed, loop forever
+  }
+
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(2000);  // Pause for 2 seconds
+
+  // Clear the buffer
   display.clearDisplay();
-  display.setTextSize(1);
+
+  // Draw a single pixel in white
+  display.drawPixel(10, 10, SSD1306_WHITE);
+
+  // Show the display buffer on the screen. You MUST call display() after
+  // drawing commands to make them visible on screen!
+  display.display();
+  delay(2000);
+  // display.display() is NOT necessary after every single drawing command,
+  // unless that's what you want...rather, you can batch up a bunch of
+  // drawing operations and then update the screen all at once by calling
+  // display.display(). These examples demonstrate both approaches...
+
+  // Invert and restore display, pausing in-between
+  display.invertDisplay(true);
+  delay(1000);
+  display.invertDisplay(false);
+  delay(1000);
+
+  if (particleSensor.begin() == false) {
+    debug.println("MAX30105 was not found. Please check wiring/power. ");
+    while (1)
+      ;
+  }
+
+  particleSensor.setup();  //Configure sensor. Use 6.4mA for LED drive
+  display.setTextSize(0.5);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.println("Booting...");
-  display.display();
-
-  // ---- MAX30102 init ----
-  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {  // 400kHz
-    Serial.println("MAX30102 not found. Check wiring.");
-    while (1) {}
-  }
-
-  // Basic sensor config (good starting point)
-  // brightness (0-255), sampleAverage, ledMode, sampleRate, pulseWidth, adcRange
-  particleSensor.setup();                     //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A);  //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0);   //Turn off Green LED
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("MAX30102 + OLED OK");
-  display.display();
-  delay(500);
 }
 
 void loop() {
-  // Read raw samples
-  long irValue = particleSensor.getIR();
+  float tempC = sensor.readTempC();
+  float tempF = sensor.readTempF();
+  mpu.update();
 
-  if (checkForBeat(irValue) == true) {
-    //Calculate beatsPerMinute
-    long delta = millis() - lastBeat;
-    lastBeat = millis();
-    beatsPerMinute = 60 / (delta / 1000.0);
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("R[");
+  display.print(particleSensor.getRed());
+  display.print("]\nIR[");
+  display.print(particleSensor.getIR());
+  display.print("]\nG[");
+  display.print(particleSensor.getGreen());
+  display.print("]\n\n");
 
-    if (beatsPerMinute < 255 && beatsPerMinute > 20) {  //Check if the BPM value is within a valid range
-      rates[rateSpot++] = (byte)beatsPerMinute;         //Store this reading in the array
-      rateSpot %= RATE_SIZE;                            //Wrap variable
+  display.print("Temp: ");
+  display.print(tempC);
+  display.print("C   ");
+  display.print(tempF);
+  display.print("F\n\n");
 
-      //Take average of readings
-      beatAvg = 0;
-      for (byte x = 0; x < RATE_SIZE; x++)
-        beatAvg += rates[x];
-      beatAvg /= RATE_SIZE;
-    }
-  }
+  display.print("AngleX: ");
+  display.print(mpu.getAngleX());
 
-  // Update OLED at a slower rate
-  if (millis() - lastDisplayMs >= displayPeriodMs) {
-    lastDisplayMs = millis();
-
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.print("IR : ");
-    display.println(irValue);
-    display.print("BPM: ");
-    display.println(beatsPerMinute);
-    display.print("Avg BPM: ");
-    display.println(beatAvg);
-
-    display.display();
-  }
-
-  // Also echo to serial if you want
-  // Serial.print("IR="); Serial.print(irValue);
-  // Serial.print(" RED="); Serial.println(redValue);
+  display.display();
 }
