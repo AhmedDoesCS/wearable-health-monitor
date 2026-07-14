@@ -1,143 +1,114 @@
-/**************************************************************************
- This is an example for our Monochrome OLEDs based on SSD1306 drivers
-
- Pick one up today in the adafruit shop!
- ------> http://www.adafruit.com/category/63_98
-
- This example is for a 128x64 pixel display using I2C to communicate
- 3 pins are required to interface (two I2C and one reset).
-
- Adafruit invests time and resources providing this open
- source code, please support Adafruit and open-source
- hardware by purchasing products from Adafruit!
-
- Written by Limor Fried/Ladyada for Adafruit Industries,
- with contributions from the open source community.
- BSD license, check license.txt for more information
- All text above, and the splash screen below must be
- included in any redistribution.
- **************************************************************************/
+#include "HealthMetrics.h"
+#include "DisplayScreens.h"
 #include <Arduino.h>
 #include "MAX30105.h"
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <SparkFun_TMP117.h>  // Used to send and recieve specific information from our sensor
+#include <SparkFun_TMP117.h>
 #include <MPU6050_light.h>
 
-#define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 64  // OLED display height, in pixels
+// -------------- Define display button constants --------------
+#define BUTTON_PIN 19 // Pin for display button
+bool lastButtonState = HIGH;
+unsigned long lastPressTime = 0;
 
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-// The pins for I2C are defined by the Wire-library.
-// On an arduino UNO:       A4(SDA), A5(SCL)
-// On an arduino MEGA 2560: 20(SDA), 21(SCL)
-// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
-#define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-MPU6050 mpu(Wire);
+// -------------- Define SSD1306 OLED constants --------------
+#define SCREEN_WIDTH 128    // OLED Display Width in pixels
+#define SCREEN_HEIGHT 64    // OLED Display Height in pixels
+#define OLED_RESET -1       // Reset Pin
+#define SCREEN_ADDRESS 0x3C // I2C Screen Address
 
-#define NUMFLAKES 10  // Number of snowflakes in the animation example
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // Initialize Display object
+ScreenManager screens(display);                                           // Define Screen Manager using display object
 
-#define LOGO_HEIGHT 16
-#define LOGO_WIDTH 16
+// -------------- Define MPU6050 Sensor constants --------------
+MPU6050 mpu6050(Wire); // Initialize sensor object
 
-MAX30105 particleSensor;
-#define debug Serial
+// -------------- Define MAX30501 Sensor constants --------------
+MAX30105 max30105; // initialize sensor object
 
-TMP117 sensor;  // Initalize sensor
+// -------------- Define TMP117 Sensor constants --------------
+TMP117 tmp117; // Initalize sensor object
 
-void setup() {
-  Serial.begin(9600);
-  Wire.begin();
-  Wire.setClock(400000);  // Used for the TMP117
-  // Wait for display
-  delay(500);
+// -------------- Define HealthMetrics.h constants --------------
+StepCounter steps;
+HeartRateMonitor hrMonitor;
+SpO2Estimator spo2;
+HRVTracker hrv;
+TempSmoother tempSmooth;
 
-  byte status = mpu.begin();
-  while (status != 0) {}
-  mpu.calcOffsets();
+void setup()
+{
+    pinMode(BUTTON_PIN, INPUT_PULLUP); // initialize button
 
-  Serial.println("TMP117 Example 1: Basic Readings");
-  if (sensor.begin() == true)  // Function to check if the sensor will correctly self-identify with the proper Device ID/Address
-  {
-    Serial.println("Begin");
-  } else {
-    Serial.println("Device failed to setup- Freezing code.");
-    while (1)
-      ;  // Runs forever
-  }
+    // Begin sensors
+    tmp117.begin();
+    display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+    max30105.begin();
 
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for (;;)
-      ;  // Don't proceed, loop forever
-  }
+    // Set up TMP117
+    Wire.begin();
+    Wire.setClock(400000); // Used for the TMP117
 
-  // Show initial display buffer contents on the screen --
-  // the library initializes this with an Adafruit splash screen.
-  display.display();
-  delay(2000);  // Pause for 2 seconds
+    // Wait for SSD1306 display
+    delay(500);
 
-  // Clear the buffer
-  display.clearDisplay();
-
-  // Draw a single pixel in white
-  display.drawPixel(10, 10, SSD1306_WHITE);
-
-  // Show the display buffer on the screen. You MUST call display() after
-  // drawing commands to make them visible on screen!
-  display.display();
-  delay(2000);
-  // display.display() is NOT necessary after every single drawing command,
-  // unless that's what you want...rather, you can batch up a bunch of
-  // drawing operations and then update the screen all at once by calling
-  // display.display(). These examples demonstrate both approaches...
-
-  // Invert and restore display, pausing in-between
-  display.invertDisplay(true);
-  delay(1000);
-  display.invertDisplay(false);
-  delay(1000);
-
-  if (particleSensor.begin() == false) {
-    debug.println("MAX30105 was not found. Please check wiring/power. ");
-    while (1)
-      ;
-  }
-
-  particleSensor.setup();  //Configure sensor. Use 6.4mA for LED drive
-  display.setTextSize(0.5);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
+    // MPU6050 Calibration and Success-check
+    byte status = mpu6050.begin();
+    while (status != 0)
+    {
+    }
+    mpu6050.calcOffsets();
 }
 
-void loop() {
-  float tempC = sensor.readTempC();
-  float tempF = sensor.readTempF();
-  mpu.update();
+void loop()
+{
+    // Read button state
+    bool currentButtonState = digitalRead(BUTTON_PIN);
+    if (currentButtonState == LOW && lastButtonState == HIGH)
+    {
+        // this is the exact moment the button was just pressed
+    }
+    lastButtonState = currentButtonState;
 
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("R[");
-  display.print(particleSensor.getRed());
-  display.print("]\nIR[");
-  display.print(particleSensor.getIR());
-  display.print("]\nG[");
-  display.print(particleSensor.getGreen());
-  display.print("]\n\n");
+    const unsigned long debounceDelay = 50; // milliseconds
 
-  display.print("Temp: ");
-  display.print(tempC);
-  display.print("C   ");
-  display.print(tempF);
-  display.print("F\n\n");
+    if (currentButtonState == LOW && lastButtonState == HIGH)
+    {
+        if (millis() - lastPressTime > debounceDelay)
+        {
+            // valid press — do the thing
+            lastPressTime = millis();
+        }
+    }
 
-  display.print("AngleX: ");
-  display.print(mpu.getAngleX());
+    // feed raw sensor data in, same reads you're already doing
+    if (hrMonitor.update(max30105.getIR()))
+    {
+        hrv.addBeat(hrMonitor.getLastBeatTimestamp());
+    }
+    spo2.addSample(max30105.getRed(), max30105.getIR());
+    steps.update(mpu6050.getAccX(), mpu6050.getAccY(), mpu6050.getAccZ());
+    float smoothTemp = tempSmooth.update(tmp117.readTempC());
 
-  display.display();
+    // pull values whenever you're ready to display them
+    float bpm = hrMonitor.getAvgBPM();
+    float o2 = spo2.isReady() ? spo2.getSpO2() : -1; // -1 = not enough data yet
+    float hrvMs = hrv.isReady() ? hrv.getSDNN() : -1;
+    float kcal = estimateCaloriesPerMinute(bpm, /*age*/ 19, /*weight kg*/ 70, /*isMale*/ true);
+
+    HealthDataSnapshot snapshot;
+    snapshot.bpm = hrMonitor.getAvgBPM();
+    snapshot.bpmReady = hrMonitor.getAvgBPM() > 0;
+    snapshot.spo2 = spo2.getSpO2();
+    snapshot.spo2Ready = spo2.isReady();
+    snapshot.steps = steps.getStepCount();
+    snapshot.tempC = tempSmooth.getSmoothed();
+    snapshot.kcalPerMin = estimateCaloriesPerMinute(snapshot.bpm, 19, 70, true);
+    snapshot.hrvMs = hrv.getSDNN();
+    snapshot.hrvReady = hrv.isReady();
+
+    screens.draw(snapshot);
 }
