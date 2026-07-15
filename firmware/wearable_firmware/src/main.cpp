@@ -41,48 +41,60 @@ TempSmoother tempSmooth;
 
 void setup()
 {
+    Serial.begin(115200);
+    delay(1000);
+
     pinMode(BUTTON_PIN, INPUT_PULLUP); // initialize button
-
-    // Begin sensors
-    tmp117.begin();
-    display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-    max30105.begin();
-
     // Set up TMP117
     Wire.begin();
     Wire.setClock(400000); // Used for the TMP117
+
+    // Begin sensors
+    tmp117.begin();
+    Serial.println("TMP117 Begun");
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+    {
+        Serial.println("Display init FAILED");
+        while (1)
+        {
+        }
+    }
+    else
+    {
+        Serial.println("Display init OK");
+    }
+
+    max30105.begin();
+    Serial.println("MAX30105 Begun");
 
     // Wait for SSD1306 display
     delay(500);
 
     // MPU6050 Calibration and Success-check
     byte status = mpu6050.begin();
+    Serial.println(status);
     while (status != 0)
     {
     }
     mpu6050.calcOffsets();
+    Serial.println("Setup complete");
 }
 
 void loop()
 {
+    Serial.println(millis());
+
     // Read button state
     bool currentButtonState = digitalRead(BUTTON_PIN);
-    if (currentButtonState == LOW && lastButtonState == HIGH)
-    {
-        // this is the exact moment the button was just pressed
-    }
-    lastButtonState = currentButtonState;
-
     const unsigned long debounceDelay = 50; // milliseconds
 
-    if (currentButtonState == LOW && lastButtonState == HIGH)
+    if (currentButtonState == LOW && lastButtonState == HIGH && (millis() - lastPressTime > debounceDelay))
     {
-        if (millis() - lastPressTime > debounceDelay)
-        {
-            // valid press — do the thing
-            lastPressTime = millis();
-        }
+        screens.nextScreen();
+        lastPressTime = millis();
     }
+    lastButtonState = currentButtonState;
 
     // feed raw sensor data in, same reads you're already doing
     if (hrMonitor.update(max30105.getIR()))
