@@ -1,0 +1,115 @@
+(footprint "Battery_2Pin_THT"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -0.5 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(hide yes)
+		(uuid "5bca73a7-b026-4ad1-8c07-ac65a8bfa987")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "Battery_2Pin_THT"
+		(at 0 1 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c08f56b3-2215-4092-a864-aee48c0bbe41")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "0d088e2b-d358-4e89-a8d7-6208a10c4a38")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "fb98efba-9aa6-440d-b016-cce0254c2d83")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_text user "+"
+		(at -1.652788 1.999999 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "214f6c19-f7a1-4ef0-a0de-db820fb26f32")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+			(justify left bottom)
+		)
+	)
+	(fp_text user "Bat"
+		(at -1.266486 -1.138481 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "387df365-8e40-4b9c-aba7-89e8efa13b89")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+			(justify left bottom)
+		)
+	)
+	(fp_text user "-"
+		(at 0.346264 1.998835 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "a9d7b55f-b7ed-4cee-b53f-641873a4baf7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+			(justify left bottom)
+		)
+	)
+	(pad "1" thru_hole rect
+		(at -1 0)
+		(size 1.5 1.5)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "874d4fdc-9ad7-4d8d-9e08-1892cb59fbe5")
+	)
+	(pad "2" thru_hole circle
+		(at 1 0)
+		(size 1.5 1.5)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "f33e4e7e-6146-4e9a-8d42-2bbbbccb371a")
+	)
+	(embedded_fonts no)
+)

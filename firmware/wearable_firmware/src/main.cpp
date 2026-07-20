@@ -8,6 +8,16 @@
 #include <Adafruit_SSD1306.h>
 #include <SparkFun_TMP117.h>
 #include <MPU6050_light.h>
+#include "OfflineBuffer.h"
+#include <WiFi.h>
+#include <time.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
+
+// -------------- Define buffer  --------------
+OfflineBuffer offlineBuffer;
+unsigned long lastRecord = 0;
+const unsigned long recordInterval = 30000; // buffer a reading every 30s, connected or not
 
 // -------------- Define display button constants --------------
 #define BUTTON_PIN 19 // Pin for display button
@@ -38,6 +48,14 @@ HeartRateMonitor hrMonitor;
 SpO2Estimator spo2;
 HRVTracker hrv;
 TempSmoother tempSmooth;
+
+// -------------- Set up decoupling for optimization --------------
+
+unsigned long lastDisplayUpdate = 0;
+const unsigned long displayInterval = 200; // 5Hz — plenty for human-readable numbers
+
+unsigned long lastTempRead = 0;
+const unsigned long tempInterval = 1000; // temperature changes slowly, no need to poll fast
 
 void setup()
 {
@@ -79,6 +97,58 @@ void setup()
     }
     mpu6050.calcOffsets();
     Serial.println("Setup complete");
+
+    // Start offlinebuffer
+    offlineBuffer.begin();
+    WiFi.begin("your_ssid", "your_password"); // non-blocking attempt, don't stall setup() waiting
+}
+
+void syncBufferedReadings()
+{
+    if (WiFi.status() != WL_CONNECTED || !offlineBuffer.hasPending())
+        return;
+
+    // Sync real time via NTP now that we're actually connected
+    configTime(0, 0, "pool.ntp.org");
+    time_t now;
+    time(&now);
+    unsigned long realTimeNow = now; // seconds since epoch
+    unsigned long millisNow = millis();
+
+    const int MAX_BATCH = 50;
+    String lines[MAX_BATCH];
+    int count = offlineBuffer.readPending(lines, MAX_BATCH);
+
+    bool allSucceeded = true;
+    for (int i = 0; i < count; i++)
+    {
+        // Reconstruct real timestamp from the buffered millis() offset
+        StaticJsonDocument<256> doc;
+        deserializeJson(doc, lines[i]);
+        unsigned long millisAtReading = doc["millis_at_reading"];
+        unsigned long realTimestamp = realTimeNow - ((millisNow - millisAtReading) / 1000);
+        doc["timestamp"] = realTimestamp;
+        doc.remove("millis_at_reading");
+
+        String payload;
+        serializeJson(doc, payload);
+
+        HTTPClient http;
+        http.begin("https://your-project.supabase.co/rest/v1/readings");
+        http.addHeader("Content-Type", "application/json");
+        http.addHeader("apikey", "your_api_key");
+        int code = http.POST(payload);
+        http.end();
+
+        if (code < 200 || code >= 300)
+        {
+            allSucceeded = false;
+            break;
+        }
+    }
+
+    if (allSucceeded)
+        offlineBuffer.clearAll(); // only clear on confirmed full success
 }
 
 void loop()
@@ -103,13 +173,12 @@ void loop()
     }
     spo2.addSample(max30105.getRed(), max30105.getIR());
     steps.update(mpu6050.getAccX(), mpu6050.getAccY(), mpu6050.getAccZ());
-    float smoothTemp = tempSmooth.update(tmp117.readTempC());
 
-    // pull values whenever you're ready to display them
-    float bpm = hrMonitor.getAvgBPM();
-    float o2 = spo2.isReady() ? spo2.getSpO2() : -1; // -1 = not enough data yet
-    float hrvMs = hrv.isReady() ? hrv.getSDNN() : -1;
-    float kcal = estimateCaloriesPerMinute(bpm, /*age*/ 19, /*weight kg*/ 70, /*isMale*/ true);
+    if (millis() - lastTempRead > tempInterval)
+    {
+        lastTempRead = millis();
+        tempSmooth.update(tmp117.readTempC()); 
+    }
 
     HealthDataSnapshot snapshot;
     snapshot.bpm = hrMonitor.getAvgBPM();
@@ -122,5 +191,16 @@ void loop()
     snapshot.hrvMs = hrv.getSDNN();
     snapshot.hrvReady = hrv.isReady();
 
-    screens.draw(snapshot);
+    if (millis() - lastDisplayUpdate > displayInterval)
+    {
+        lastDisplayUpdate = millis();
+        screens.draw(snapshot);
+    }
+
+    if (millis() - lastRecord > recordInterval)
+    {
+        lastRecord = millis();
+        offlineBuffer.addReading(snapshot, millis());
+    }
+    syncBufferedReadings(); // cheap no-op if disconnected or nothing pending
 }
